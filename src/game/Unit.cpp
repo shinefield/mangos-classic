@@ -304,7 +304,7 @@ void Unit::Update(uint32 update_diff, uint32 p_time)
     }
 
     // update combat timer only for players and pets
-    if (isInCombat() && GetCharmerOrOwnerPlayerOrPlayerItself())
+    if (isInCombat() && GetCharmerOrOwnerPlayerOrPlayerItself() && !m_DummyCombatState)
     {
         // Check UNIT_STAT_MELEE_ATTACKING or UNIT_STAT_CHASE (without UNIT_STAT_FOLLOW in this case) so pets can reach far away
         // targets without stopping half way there and running off.
@@ -6307,6 +6307,17 @@ void Unit::SetInCombatWith(Unit* enemy)
     }
 
     SetInCombatState(false, enemy);
+}
+
+void Unit::SetInDummyCombatState(bool state)
+{
+    if (state)
+    {
+        m_DummyCombatState = true;
+        SetInCombatState(false);
+    }
+    else
+        m_DummyCombatState = false;
 }
 
 void Unit::SetInCombatState(bool PvP, Unit* enemy)
