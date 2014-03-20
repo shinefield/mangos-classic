@@ -2131,8 +2131,10 @@ bool SpellMgr::IsNoStackSpellDueToSpell(uint32 spellId_1, uint32 spellId_2) cons
         {
             if (spellInfo_1->EffectApplyAuraName[i] == SPELL_AURA_ADD_FLAT_MODIFIER ||
                     spellInfo_1->EffectApplyAuraName[i] == SPELL_AURA_ADD_PCT_MODIFIER  ||
+                    spellInfo_1->EffectApplyAuraName[i] == SPELL_AURA_MOD_INCREASE_SPEED ||
                     spellInfo_2->EffectApplyAuraName[i] == SPELL_AURA_ADD_FLAT_MODIFIER ||
-                    spellInfo_2->EffectApplyAuraName[i] == SPELL_AURA_ADD_PCT_MODIFIER)
+                    spellInfo_2->EffectApplyAuraName[i] == SPELL_AURA_ADD_PCT_MODIFIER ||
+                    spellInfo_2->EffectApplyAuraName[i] == SPELL_AURA_MOD_INCREASE_SPEED)
                 isModifier = true;
         }
 
