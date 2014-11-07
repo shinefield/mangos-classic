@@ -482,7 +482,13 @@ class MANGOS_DLL_SPEC Creature : public Unit
 
         bool Create(uint32 guidlow, CreatureCreatePos& cPos, CreatureInfo const* cinfo, Team team = TEAM_NONE, const CreatureData* data = NULL, GameEventCreatureData const* eventData = NULL);
         bool LoadCreatureAddon(bool reload);
-        void SelectLevel(const CreatureInfo* cinfo, float percentHealth = 100.0f, float percentMana = 100.0f);
+        /**
+        * \brief: Set default stats (level, health, power, armor, melee/ranged damage)
+        * \param: const CreatureInfo * cinfo : creature info from db.
+        * \param: uint32 forcedLevel         : for pet we can override level
+        * \returns: void
+        **/
+        void SelectLevel(const CreatureInfo* cinfo, uint32 forcedLevel = 0);
         void LoadEquipment(uint32 equip_entry, bool force = false);
 
         bool HasStaticDBSpawnData() const;                  // listed in `creature` table and have fixed in DB guid

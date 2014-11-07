@@ -347,7 +347,16 @@ bool Creature::UpdateEntry(uint32 Entry, Team team, const CreatureData* data /*=
     SetSheath(SHEATH_STATE_MELEE);
     SetByteValue(UNIT_FIELD_BYTES_2, 1, UNIT_BYTE2_FLAG_AURAS);
 
-    SelectLevel(GetCreatureInfo(), preserveHPAndPower ? GetHealthPercent() : 100.0f, 100.0f);
+    if (preserveHPAndPower)
+    {
+        float healthPercent = GetHealthPercent();
+        SelectLevel(GetCreatureInfo());
+        SetHealthPercent(healthPercent);
+
+        //TODO:: Do we realy need to manage power percent?
+    }
+    else
+        SelectLevel(GetCreatureInfo());
 
     if (team == HORDE)
         setFaction(GetCreatureInfo()->FactionHorde);
@@ -1125,14 +1134,23 @@ void Creature::SaveToDB(uint32 mapid)
     WorldDatabase.CommitTransaction();
 }
 
-void Creature::SelectLevel(const CreatureInfo* cinfo, float percentHealth, float /*percentMana*/)
+void Creature::SelectLevel(const CreatureInfo* cinfo, uint32 forcedLevel /* = 0 */)
 {
     uint32 rank = IsPet() ? 0 : cinfo->Rank;    // TODO :: IsPet probably not needed here
 
-    // level
-    uint32 const minlevel = cinfo->MinLevel;
-    uint32 const maxlevel = cinfo->MaxLevel;
-    uint32 level = minlevel == maxlevel ? minlevel : urand(minlevel, maxlevel);
+    // level can be forced for pet
+    uint32 level = forcedLevel;
+    // init to forcedLevel to make it compatible with old way to set stats
+    uint32 minlevel = forcedLevel;
+    uint32 maxlevel = forcedLevel;
+
+    if (!level) // is not forced level?
+    {
+        // set level from db values
+        minlevel = cinfo->MinLevel;
+        maxlevel = cinfo->MaxLevel;
+        level = minlevel == maxlevel ? minlevel : urand(minlevel, maxlevel);
+    }
     SetLevel(level);
 
     //////////////////////////////////////////////////////////////////////////
@@ -1181,11 +1199,7 @@ void Creature::SelectLevel(const CreatureInfo* cinfo, float percentHealth, float
     // health
     SetCreateHealth(health);
     SetMaxHealth(health);
-
-    if (percentHealth == 100.0f)
-        SetHealth(health);
-    else
-        SetHealthPercent(percentHealth);
+    SetHealth(health);
 
     SetModifierValue(UNIT_MOD_HEALTH, BASE_VALUE, float(health));
 
