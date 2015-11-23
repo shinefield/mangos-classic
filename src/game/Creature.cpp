@@ -359,7 +359,16 @@ bool Creature::UpdateEntry(uint32 Entry, Team team, const CreatureData* data /*=
     SetSheath(SHEATH_STATE_MELEE);
     SetByteValue(UNIT_FIELD_BYTES_2, 1, UNIT_BYTE2_FLAG_AURAS);
 
-    SelectLevel(GetCreatureInfo(), preserveHPAndPower ? GetHealthPercent() : 100.0f);
+    if (preserveHPAndPower)
+    {
+        float healthPercent = GetHealthPercent();
+        SelectLevel(GetCreatureInfo());
+        SetHealthPercent(healthPercent);
+
+        //TODO:: Do we realy need to manage power percent?
+    }
+    else
+        SelectLevel(GetCreatureInfo());
 
     if (team == HORDE)
         setFaction(GetCreatureInfo()->FactionHorde);

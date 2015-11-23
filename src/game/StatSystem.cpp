@@ -568,7 +568,18 @@ bool Creature::UpdateAllStats()
     UpdateAttackPowerAndDamage();
 
     for (int i = POWER_MANA; i < MAX_POWERS; ++i)
-        UpdateMaxPower(Powers(i));
+    {
+        switch (i)
+        {
+            // rage and energy are not used for pet (and creature generally)
+            case POWER_RAGE:
+            case POWER_ENERGY:
+                break;
+            default:
+                UpdateMaxPower(Powers(i));
+                break;
+        }
+    }
 
     for (int i = SPELL_SCHOOL_NORMAL; i < MAX_SPELL_SCHOOL; ++i)
         UpdateResistances(i);
@@ -698,7 +709,18 @@ bool Pet::UpdateAllStats()
         UpdateStats(Stats(i));
 
     for (int i = POWER_MANA; i < MAX_POWERS; ++i)
-        UpdateMaxPower(Powers(i));
+    {
+        switch (i)
+        {
+            // rage and energy are not used for pet (and creature generally)
+            case POWER_RAGE:
+            case POWER_ENERGY:
+                break;
+            default:
+                UpdateMaxPower(Powers(i));
+                break;
+        }
+    }
 
     for (int i = SPELL_SCHOOL_NORMAL; i < MAX_SPELL_SCHOOL; ++i)
         UpdateResistances(i);

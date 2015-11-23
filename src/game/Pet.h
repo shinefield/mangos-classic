@@ -33,6 +33,8 @@ enum PetType
     MAX_PET_TYPE            = 4
 };
 
+static const std::string PetTypeStrings[MAX_PET_TYPE] = { "Summoned", "Hunter", "Guardian", "Mini" };
+
 #define MAX_PET_STABLES         2
 
 // stored in character_pet.slot
@@ -152,12 +154,16 @@ class MANGOS_DLL_SPEC Pet : public Creature
 {
     public:
         explicit Pet(PetType type = MAX_PET_TYPE);
+        explicit Pet(PetType petType, Unit* owner);
         virtual ~Pet();
 
         void AddToWorld() override;
         void RemoveFromWorld() override;
 
+        virtual Unit* GetOwner() const override { return m_owner; }
+
         PetType getPetType() const { return m_petType; }
+        const char* GetPetTypeName() const { return PetTypeStrings[m_petType].c_str(); }
         void setPetType(PetType type) { m_petType = type; }
         bool isControlled() const { return getPetType() == SUMMON_PET || getPetType() == HUNTER_PET; }
         bool isTemporarySummoned() const { return m_duration > 0; }
@@ -165,6 +171,9 @@ class MANGOS_DLL_SPEC Pet : public Creature
 
         bool Create(uint32 guidlow, CreatureCreatePos& cPos, CreatureInfo const* cinfo, uint32 pet_number);
         bool CreateBaseAtCreature(Creature* creature);
+        bool NewCreate(SpellEntry const* spellEntry, uint32 effIdx, CreatureCreatePos * spawnPos = nullptr, uint32 forcedLevel = 0);
+        void SetCreaturePetStats(const CreatureInfo* cinfo, uint32 petLevel);
+        void SetPlayerPetStats(uint32 petLevel);
         bool LoadPetFromDB(Player* owner, uint32 petentry = 0, uint32 petnumber = 0, bool current = false);
         void SavePetToDB(PetSaveMode mode);
         void Unsummon(PetSaveMode mode, Unit* owner = nullptr);
@@ -286,6 +295,7 @@ class MANGOS_DLL_SPEC Pet : public Creature
         bool    m_loading;
 
     private:
+        Unit*        m_owner;
         PetModeFlags m_petModeFlags;
 
         void SaveToDB(uint32) override                      // overwrited of Creature::SaveToDB     - don't must be called

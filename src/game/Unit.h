@@ -1475,7 +1475,7 @@ class MANGOS_DLL_SPEC Unit : public WorldObject
 
         Player* GetSpellModOwner() const;
 
-        Unit* GetOwner() const;
+        virtual Unit* GetOwner() const;
         Pet* GetPet() const;
         Unit* GetCharmer() const;
         Unit* GetCharm() const;

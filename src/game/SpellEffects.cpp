@@ -2126,7 +2126,7 @@ void Spell::EffectSummon(SpellEffectIndex eff_idx)
     }
 
     uint32 level = m_caster->getLevel();
-    Pet* spawnCreature = new Pet(SUMMON_PET);
+    Pet* spawnCreature = new Pet(SUMMON_PET, m_caster);
 
     if (m_caster->GetTypeId() == TYPEID_PLAYER && spawnCreature->LoadPetFromDB((Player*)m_caster, pet_entry))
     {
@@ -2147,7 +2147,13 @@ void Spell::EffectSummon(SpellEffectIndex eff_idx)
     if (!(m_targets.m_targetMask & TARGET_FLAG_DEST_LOCATION))
         pos = CreatureCreatePos(m_caster, -m_caster->GetOrientation());
 
-    Map* map = m_caster->GetMap();
+    if (!spawnCreature->NewCreate(m_spellInfo, eff_idx, &pos, level))
+    {
+        delete spawnCreature;
+        return;
+    }
+
+    /*Map* map = m_caster->GetMap();
     uint32 pet_number = sObjectMgr.GeneratePetNumber();
     if (!spawnCreature->Create(map->GenerateLocalLowGuid(HIGHGUID_PET), pos, cInfo, pet_number))
     {
@@ -2193,6 +2199,7 @@ void Spell::EffectSummon(SpellEffectIndex eff_idx)
         spawnCreature->SavePetToDB(PET_SAVE_AS_CURRENT);
         ((Player*)m_caster)->PetSpellInitialize();
     }
+*/
 
     if (m_caster->GetTypeId() == TYPEID_UNIT && ((Creature*)m_caster)->AI())
         ((Creature*)m_caster)->AI()->JustSummoned((Creature*)spawnCreature);
@@ -2564,7 +2571,7 @@ void Spell::EffectSummonGuardian(SpellEffectIndex eff_idx)
             return;                                         // find old guardian, ignore summon
 
     // in another case summon new
-    uint32 level = m_caster->getLevel();
+    uint32 level = 0;
 
     // level of pet summoned using engineering item based at engineering skill level
     if (m_caster->GetTypeId() == TYPEID_PLAYER && m_CastItem)
@@ -2591,7 +2598,7 @@ void Spell::EffectSummonGuardian(SpellEffectIndex eff_idx)
 
     for (int32 count = 0; count < amount; ++count)
     {
-        Pet* spawnCreature = new Pet(GUARDIAN_PET);
+        Pet* spawnCreature = new Pet(GUARDIAN_PET, m_caster);
 
         // If dest location if present
         // Summon 1 unit in dest location
@@ -2611,7 +2618,13 @@ void Spell::EffectSummonGuardian(SpellEffectIndex eff_idx)
         else
             pos = CreatureCreatePos(m_caster, m_caster->GetOrientation());
 
-        Map* map = m_caster->GetMap();
+        if (!spawnCreature->NewCreate(m_spellInfo, eff_idx, &pos, level))
+        {
+            delete spawnCreature;
+            continue;
+        }
+
+        /*Map* map = m_caster->GetMap();
         uint32 pet_number = sObjectMgr.GeneratePetNumber();
         if (!spawnCreature->Create(map->GenerateLocalLowGuid(HIGHGUID_PET), pos, cInfo, pet_number))
         {
@@ -2641,7 +2654,7 @@ void Spell::EffectSummonGuardian(SpellEffectIndex eff_idx)
 
         m_caster->AddGuardian(spawnCreature);
 
-        map->Add((Creature*)spawnCreature);
+        map->Add((Creature*)spawnCreature);*/
 
         // Notify Summoner
         if (m_caster->GetTypeId() == TYPEID_UNIT && ((Creature*)m_caster)->AI())
@@ -2918,7 +2931,7 @@ void Spell::EffectSummonPet(SpellEffectIndex eff_idx)
         return;
     }
 
-    Pet* NewSummon = new Pet;
+    Pet* NewSummon = new Pet(SUMMON_PET, m_caster);
 
     // petentry==0 for hunter "call pet" (current pet summoned if any)
     if (m_caster->GetTypeId() == TYPEID_PLAYER && NewSummon->LoadPetFromDB((Player*)m_caster, petentry))
@@ -2943,13 +2956,13 @@ void Spell::EffectSummonPet(SpellEffectIndex eff_idx)
     }
 
     // not error in case fail hunter call pet
-    if (!petentry)
+    if (!petentry || !NewSummon->NewCreate(m_spellInfo, eff_idx))
     {
         delete NewSummon;
         return;
     }
 
-    CreatureCreatePos pos(m_caster, m_caster->GetOrientation());
+    /*CreatureCreatePos pos(m_caster, m_caster->GetOrientation());
 
     Map* map = m_caster->GetMap();
     uint32 pet_number = sObjectMgr.GeneratePetNumber();
@@ -3030,7 +3043,7 @@ void Spell::EffectSummonPet(SpellEffectIndex eff_idx)
     {
         NewSummon->SavePetToDB(PET_SAVE_AS_CURRENT);
         ((Player*)m_caster)->PetSpellInitialize();
-    }
+    }*/
 }
 
 void Spell::EffectLearnPetSpell(SpellEffectIndex eff_idx)
@@ -4707,9 +4720,15 @@ void Spell::EffectSummonCritter(SpellEffectIndex eff_idx)
         pos = CreatureCreatePos(m_caster, m_caster->GetOrientation());
 
     // summon new pet
-    Pet* critter = new Pet(MINI_PET);
+    Pet* critter = new Pet(MINI_PET, m_caster);
 
-    Map* map = m_caster->GetMap();
+    if (!critter->NewCreate(m_spellInfo, eff_idx, &pos))
+    {
+        delete critter;
+        return;
+    }
+
+    /*Map* map = m_caster->GetMap();
     uint32 pet_number = sObjectMgr.GeneratePetNumber();
     if (!critter->Create(map->GenerateLocalLowGuid(HIGHGUID_PET), pos, cInfo, pet_number))
     {
@@ -4739,7 +4758,7 @@ void Spell::EffectSummonCritter(SpellEffectIndex eff_idx)
 
     player->_SetMiniPet(critter);
 
-    map->Add((Creature*)critter);
+    map->Add((Creature*)critter);*/
 
     // Notify Summoner
     if (m_caster->GetTypeId() == TYPEID_UNIT && ((Creature*)m_caster)->AI())
