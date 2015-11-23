@@ -353,6 +353,7 @@ class MANGOS_DLL_SPEC ChatHandler
         bool HandleNpcSetMoveTypeCommand(char* args);
         bool HandleNpcSpawnDistCommand(char* args);
         bool HandleNpcSpawnTimeCommand(char* args);
+        bool HandleNpcStatsCommand(char* args);
         bool HandleNpcTameCommand(char* args);
         bool HandleNpcTextEmoteCommand(char* args);
         bool HandleNpcUnFollowCommand(char* args);

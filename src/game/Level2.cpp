@@ -2058,6 +2058,117 @@ bool ChatHandler::HandleNpcSetDeathStateCommand(char* args)
     return true;
 }
 
+// show current npc stats in chat
+bool ChatHandler::HandleNpcStatsCommand(char* args)
+{
+    Creature* pCreature = getSelectedCreature();
+    if (!pCreature)
+    {
+        SendSysMessage(LANG_SELECT_CREATURE);
+        SetSentErrorMessage(true);
+        return false;
+    }
+
+    bool showDBValues = false;
+
+    char* fromDB = ExtractLiteralArg(&args);
+    if (fromDB && strncmp(fromDB, "db", strlen(fromDB)) == 0)
+        showDBValues = true;
+
+    uint32 level = pCreature->getLevel();
+    CreatureInfo const* cinfo = pCreature->GetCreatureInfo();
+
+    if (showDBValues)
+    {
+        CreatureClassLvlStats const* cCLS = sObjectMgr.GetCreatureClassLvlStats(level, cinfo->UnitClass);
+        if (cCLS)
+        {
+            if (cinfo->ArmorMultiplier < 0)
+                PSendSysMessage("ClasslevelStats is not used for this creature so following data are probably wrong!");
+
+            uint32 rank = pCreature->IsPet() ? 0 : cinfo->Rank;
+            uint32 health = cCLS->BaseHealth * cinfo->HealthMultiplier;
+            float customHealthMod = pCreature->_GetHealthMod(rank);
+            health *= customHealthMod; // Apply custom config setting
+            float auraMod = pCreature->GetModifierValue(UNIT_MOD_HEALTH, TOTAL_VALUE);
+            health += auraMod;
+
+            if (health < 1)
+                health = 1;
+
+            PSendSysMessage("max health = BaseHealth * HealthMultiplier * CustomHealtMod");
+            PSendSysMessage("%u = %u * %3.2f * %3.2f + %3.2f", health, cCLS->BaseHealth, cinfo->HealthMultiplier, customHealthMod);
+            PSendSysMessage("Max health after aura apply = %u", pCreature->GetMaxHealth());
+
+            if (pCreature->GetPowerType() == POWER_MANA)
+            {
+                uint32 mana = cCLS->BaseMana * cinfo->PowerMultiplier;
+                PSendSysMessage("Max mana = BaseDBMana * PowerMultiplier");
+                PSendSysMessage("%u = %u * %3.2f", mana, cCLS->BaseMana, cinfo->PowerMultiplier);
+                PSendSysMessage("Max mana after aura apply = %u", pCreature->GetMaxPower(POWER_MANA));
+            }
+            else
+            {
+                PSendSysMessage("Power type is %s", GetPowerName(pCreature->GetPowerType()));
+            }
+
+            float customDamageMod = Creature::_GetDamageMod(rank);
+            float baseMinDmg = ((cCLS->BaseDamage * cinfo->DamageVariance) + (cCLS->BaseMeleeAttackPower / 14.0f)) * (cinfo->MeleeBaseAttackTime / 1000.0f) * cinfo->DamageMultiplier;
+            float baseMaxDmg = ((cCLS->BaseDamage * cinfo->DamageVariance *1.5f) + (cCLS->BaseMeleeAttackPower / 14.0f)) * (cinfo->MeleeBaseAttackTime / 1000.0f) * cinfo->DamageMultiplier;
+
+            PSendSysMessage("BaseMinDmg = ((BaseDmg * DmgVariance) + (AttkPower/14)) * (AttkTime/1000) * DmgMult * customMult");
+            PSendSysMessage("%.2f = ((%.2f * %.2f) + (%.2f/14)) * (%u/1000) * %.2f * %.2f", baseMinDmg, cCLS->BaseDamage, cinfo->DamageVariance, cCLS->BaseMeleeAttackPower, cinfo->MeleeBaseAttackTime, cinfo->DamageMultiplier, customDamageMod);
+            PSendSysMessage("BaseMaxDmg = ((BaseDmg * DmgVariance * 1.5) + (AttkPower/14)) * (AttkTime/1000) * DmgMult * customMult");
+            PSendSysMessage("%.2f = ((%.2f * %.2f * 1.5) + (%.2f/14)) * (%u/1000) * %.2f * %.2f", baseMaxDmg, cCLS->BaseDamage, cinfo->DamageVariance, cCLS->BaseMeleeAttackPower, cinfo->MeleeBaseAttackTime, cinfo->DamageMultiplier, customDamageMod);
+
+            PSendSysMessage("Core damage range after applying aura -> (%6.2f .. %6.2f)", pCreature->GetFloatValue(UNIT_FIELD_MINDAMAGE), pCreature->GetFloatValue(UNIT_FIELD_MAXDAMAGE));
+
+            uint32 armor = cinfo->Armor * cinfo->ArmorMultiplier + auraMod;
+            PSendSysMessage("BaseArmor = BaseDBArmor * ArmorMultipier");
+            PSendSysMessage("%u = %u * %3.2f", armor, cinfo->Armor, cinfo->ArmorMultiplier);
+            PSendSysMessage("Total armor after aura apply = %u", pCreature->GetArmor());
+
+            PSendSysMessage("Resistances");
+            PSendSysMessage("Holy(%u), Fire(%u), Nature(%u), Frost(%u), Shadow(%u), Arcane(%u)",
+                cinfo->ResistanceHoly, cinfo->ResistanceFire, cinfo->ResistanceNature,
+                cinfo->ResistanceFrost, cinfo->ResistanceShadow, cinfo->ResistanceArcane);
+        }
+        else
+        {
+            PSendSysMessage("Error cannot get classlevelstats data for %s", pCreature->GetGuidStr().c_str());
+            SetSentErrorMessage(true);
+            return false;
+        }
+    }
+    else
+    {
+        std::string creatureClass;
+        switch (pCreature->getClass())
+        {
+            case CLASS_WARRIOR: creatureClass = "Warrior"; break;
+            case CLASS_MAGE: creatureClass = "Mage"; break;;
+            case CLASS_PALADIN: creatureClass = "Paladin"; break;
+            default:
+                creatureClass = "Not correct class for this creature";
+                break;
+        }
+        PSendSysMessage("Creature class: %s", creatureClass.c_str());
+        PSendSysMessage("Current Health: %u, MaxHealth: %u", pCreature->GetHealth(), pCreature->GetMaxHealth());
+        Powers powerType = pCreature->GetPowerType();
+        PSendSysMessage("Power type: %s, Power: %u, MaxPower: %u", GetPowerName(powerType), pCreature->GetPower(powerType), pCreature->GetMaxPower(powerType));
+        PSendSysMessage("Armor: %u", pCreature->GetArmor());
+        PSendSysMessage("Current(with aura) Min damage: %.2f, Max damage: %.2f", pCreature->GetFloatValue(UNIT_FIELD_MINDAMAGE), pCreature->GetFloatValue(UNIT_FIELD_MAXDAMAGE));
+        PSendSysMessage("Current attack power: %5.2f", pCreature->GetTotalAttackPowerValue(BASE_ATTACK));
+        PSendSysMessage("Current attack speed: %u", pCreature->GetAttackTime(BASE_ATTACK));
+        PSendSysMessage("Resistances");
+        PSendSysMessage("Holy(%u), Fire(%u), Nature(%u), Frost(%u), Shadow(%u), Arcane(%u)",
+            pCreature->GetResistance(SPELL_SCHOOL_HOLY), pCreature->GetResistance(SPELL_SCHOOL_FIRE), pCreature->GetResistance(SPELL_SCHOOL_NATURE),
+            pCreature->GetResistance(SPELL_SCHOOL_FROST), pCreature->GetResistance(SPELL_SCHOOL_SHADOW), pCreature->GetResistance(SPELL_SCHOOL_ARCANE));
+    }
+
+    return true;
+}
+
 // TODO: NpcCommands that need to be fixed :
 
 bool ChatHandler::HandleNpcNameCommand(char* /*args*/)

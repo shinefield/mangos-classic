@@ -146,6 +146,16 @@ enum Powers
 
 #define MAX_POWERS                        5
 
+static char const* PowersStr[MAX_POWERS] = { "MANA", "RAGE", "FOCUS", "ENERGY", "HAPPINESS" };
+
+inline char const* GetPowerName(Powers p)
+{
+    if (p < MAX_POWERS)
+        return PowersStr[p];
+    else
+        return nullptr;
+}
+
 /**
  * The different spell schools that are available, used in both damage calculation
  * and spell casting to decide what should be affected, the SPELL_SCHOOL_NORMAL
